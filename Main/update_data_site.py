@@ -59,7 +59,7 @@ def add_data_site(url):
     
     # Full format string
     format_string = {
-        "name" : name_header,
+        "header" : name_header,
         "url" : url,
         "content_exists" : True,
         "contents" : webpage_contents,
@@ -68,5 +68,3 @@ def add_data_site(url):
 
     # Now to insert to database
     pages_collection.insert_one(format_string)
-    
-
