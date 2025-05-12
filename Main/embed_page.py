@@ -1,5 +1,8 @@
 
 from import_libary import *
+# GPT set up
+openAI_API_Key = os.getenv("OPENAI_API")
+openAI_Client = openai.OpenAI(api_key=openAI_API_Key)
 
 def embed_content(content):
 
