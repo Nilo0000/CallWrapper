@@ -10,6 +10,20 @@ def cosine_similarity(prompt, element):
     score = dot(prompt, element) / (norm(prompt) * norm(element))
     return score
 
+def find_context(prompt_embedding, updated_context):
+        # Pages collection
+        got_content = pages_collection.find( {"contents" : {"$exists" : True}} )
+        
+        for element in got_content:
+            score = cosine_similarity(prompt_embedding, element["embedding"])
+
+            # Looks for reasonability
+            if (0.35 < score < 1):
+                updated_context.append( [element["embedding"], element["contents"]] )
+
+        return updated_context
+    
+
 # Create a conversation object, with conversation context
 # When calling chatgpt, include the prompts of the chatgpt, its respective answers as well as the context retrieved from the database
 class conversation:
@@ -23,9 +37,8 @@ class conversation:
     convo_ticker = 0
 
     #Constructor
-    def __init__(self, id_, client_phone_num_):
+    def __init__(self, id_):
         self.id = id_
-        self.client_phone_num = client_phone_num_
 
     '''
         Methods to include
@@ -50,7 +63,12 @@ class conversation:
         #Embeddify prompt
         prompt_embed = embed_content(prompt)
         self.temporary_context.append( [prompt_embed, prompt] ) # Sends a list of the actual embedding, and the actual textual prompt/text
-    
+
+        # Goes to mongodb and adds MORE context :)
+        # Pages collection
+        got_content = pages_collection.find( {"contents" : {"$exists" : True}} )
+
+
     def create_message(self, temporary_context):
         string_of = []
 
@@ -72,15 +90,7 @@ class conversation:
             Then finds relevant **mongodb database** elements, and returns them (for now)
         '''
 
-        # Pages collection
-        got_content = pages_collection.find( {"contents" : {"$exists" : True}} )
-        
-        for element in got_content:
-            score = cosine_similarity(self.temporary_context[0][0], element["embedding"])
-
-            # Looks for reasonability
-            if (0.35 < score < 1):
-                self.temporary_context.append( [element["embedding"], element["contents"]] ) ############# POSSIBLY SEND ID ##############
+        self.temporary_context = find_context(self.temporary_context[0][0], self.temporary_context)
         
         ## Now that we have context loaded again, we can start to call chatgpt and get results back
         message = self.create_message(self.temporary_context)
@@ -102,6 +112,7 @@ class conversation:
 
 
 
-testobj = conversation(1, 4168341740)
+testobj = conversation(1)
 testobj.create_context("What are your climate control services")
 testobj.send_call("Explain your lighting services")
+del testobj
