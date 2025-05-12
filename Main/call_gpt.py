@@ -20,6 +20,7 @@ class conversation:
         --> client_phone_num = int, phone number of whoever is calling
     '''
     temporary_context = []
+    convo_ticker = 0
 
     #Constructor
     def __init__(self, id_, client_phone_num_):
@@ -64,6 +65,7 @@ class conversation:
     def send_call(self, prompt):
         # Gets the new prompt and embeds it and adds again
         self.create_context(prompt)
+        self.convo_ticker += 1
 
         '''
             Now use that embedded prompt, loops through **mogodb database**
@@ -87,9 +89,6 @@ class conversation:
         message.append( {"role" : "user", "content" : "You are personable, and make jokes here and there, respond as if you're talking like a human"} )
         message.append( {"role" : "user", "content" : "You are a customer service agent, use the previous messages as context for answering all questions"} )
         message.append( {"role" : "user", "content" : "Keep messages to around 50 words"} )
-
-        #for string_element in string_of:
-            #message.append(element)
         
         message.append( {"role" : "user", "content" : prompt} )
 
@@ -105,6 +104,4 @@ class conversation:
 
 testobj = conversation(1, 4168341740)
 testobj.create_context("What are your climate control services")
-print(testobj.temporary_context[0][1])
 testobj.send_call("Explain your lighting services")
-print(testobj.temporary_context[2][1])
