@@ -1,5 +1,6 @@
 # Imports
 from import_libary import *
+from extra_gpt_information import string_of
 # GPT set up
 openAI_API_Key = os.getenv("OPENAI_API")
 openAI_Client = openai.OpenAI(api_key=openAI_API_Key)
@@ -87,6 +88,9 @@ class conversation:
         message.append( {"role" : "user", "content" : "You are a customer service agent, use the previous messages as context for answering all questions"} )
         message.append( {"role" : "user", "content" : "Keep messages to around 50 words"} )
 
+        #for string_element in string_of:
+            #message.append(element)
+        
         message.append( {"role" : "user", "content" : prompt} )
 
         # Finally call them!
@@ -95,10 +99,12 @@ class conversation:
             messages=message,
         )
 
-        print(response.choices[0].message.content)
-
-test_obj = conversation(1, 4168341740)
-test_obj.send_call("Can you tell me about your lighting system services?")
-del test_obj
+        #print(response.choices[0].message.content)
 
 
+
+testobj = conversation(1, 4168341740)
+testobj.create_context("What are your climate control services")
+print(testobj.temporary_context[0][1])
+testobj.send_call("Explain your lighting services")
+print(testobj.temporary_context[2][1])
