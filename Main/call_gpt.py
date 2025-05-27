@@ -28,6 +28,11 @@ class conversation:
     def _get_relevant_context(self, prompt):
         # Embeddify prompt
         prompt_embed = embed_content(prompt)
+        
+        # If we already have 3 elements, remove the oldest one
+        if len(self.temporary_context) >= 3:
+            self.temporary_context.pop(0)
+            
         self.temporary_context.append([prompt_embed, prompt])  # Store prompt and its embedding
         
         # Use MongoDB's $vectorSearch for efficient similarity search
@@ -58,9 +63,11 @@ class conversation:
         # Get relevant documents using vector search
         search_results = list(pages_collection.aggregate(pipeline))
         
-        # Filter and add relevant context
+        # Filter and add relevant context, maintaining max 3 elements
         for doc in search_results:
             if 0.5 < doc["score"] < 1:
+                if len(self.temporary_context) >= 3:
+                    self.temporary_context.pop(0)
                 self.temporary_context.append([doc["embedding"], doc["contents"]])
 
     def create_message(self, temporary_context):
