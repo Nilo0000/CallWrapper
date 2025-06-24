@@ -4,11 +4,11 @@ import websocket
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API")
 
-url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17"
+url = "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03"
 headers = [
     "Authorization: Bearer " + OPENAI_API_KEY,
     "OpenAI-Beta: realtime=v1"
-    "speed":"2"
+
 ]
 
 def on_open(ws):
