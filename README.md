@@ -16,6 +16,33 @@ A big focus for this is to **reduce costs**, using more computation power by the
  - OpenAI Runtime API **Not implemented yet but planned**
  - Twilio Voice **Not implemented yet but planned**
 
+# Setup
+
+## MongoDB Vector Search Setup
+To enable fast vector similarity search, you need to create a vector search index in MongoDB Atlas:
+
+1. Go to MongoDB Atlas dashboard
+2. Select your database and collection
+3. Go to the "Search" tab
+4. Create a new search index with the following JSON configuration:
+```json
+{
+  "mappings": {
+    "dynamic": true,
+    "fields": {
+      "embedding": {
+        "dimensions": 1536,
+        "similarity": "cosine",
+        "type": "knnVector"
+      }
+    }
+  }
+}
+```
+5. Name the index "vector_index"
+
+Note: The dimensions value (1536) is specific to OpenAI's text-embedding-3-small model. Adjust if using a different model.
+
 # Files
 
  - **call_gpt.py** 

@@ -7,7 +7,7 @@ def writify_method(thing):
         # If thing is a list
         if (type(thing) is list):
             for i in thing:
-                string_of = str(i) + ", "
+                string_of = str(i[0][1]) + ", "
                 f.write(string_of)
         else:
             f.write(thing)

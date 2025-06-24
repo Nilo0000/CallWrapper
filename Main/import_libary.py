@@ -1,3 +1,5 @@
+
+# Database imports
 import requests
 import json
 from bs4 import BeautifulSoup
@@ -8,6 +10,17 @@ import openai
 from embed_page import embed_content
 from embed_page import textify_embed
 from writify import writify_method
+
+
+## Call imports
+import base64
+import asyncio
+import websockets
+from fastapi import FastAPI, WebSocket, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.websockets import WebSocketDisconnect
+from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
+
 
 # Math
 import numpy as np
