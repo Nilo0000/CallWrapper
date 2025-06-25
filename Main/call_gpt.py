@@ -60,8 +60,4 @@ def get_relevant_context(prompt):
             truncate_string += doc["contents"]
     
     # Returns it
-    print(truncate_string)
-    #return truncate_string
-
-print("STARTING, sent roblox")
-get_relevant_context("ROBLOX")
+    return truncate_string
