@@ -103,8 +103,13 @@ async def handle_media_stream(websocket: WebSocket):
                 async for openai_message in openai_ws:
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
-                        print(f"Received event: {response['type']}", response)
+                        #print(f"Received event: {response['type']}", response)
+                        print("A")
 
+                    if response['type'] == "conversation.item.input_audio_transcription.completed":
+                        print(response['transcript'])
+
+                    ##########################################################################################
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                         audio_delta = {
@@ -212,11 +217,33 @@ async def initialize_session(openai_ws):
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
+            "speed":1.2,
+            "input_audio_transcription":{
+                "model":"whisper-1",
+            }
         }
     }
-    print('Sending session update:', json.dumps(session_update))
+    #print('Sending session update:', json.dumps(session_update))
     await openai_ws.send(json.dumps(session_update))
 
+    context_item = {
+        "event_id": "event_345",
+        "type": "conversation.item.create",
+        "item": {
+            "id": "msg_001",
+            "type": "message",
+            "role": "system",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Be polite, keep answers to a concise 150 words maximum"
+                }
+            ]
+        }
+    }
+        
+    await openai_ws.send(json.dumps(context_item))
+    
     # Uncomment the next line to have the AI speak first
     await send_initial_conversation_item(openai_ws)
 
