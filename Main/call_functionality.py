@@ -1,7 +1,8 @@
 
 # Imports
-from import_libary import *
-from call_gpt import conversation
+from helpers.import_libary import *
+from helpers.call_gpt import get_relevant_context
+from Main.helpers.call_gpt import get_relevant_context
 app = FastAPI() # initialize the fastapi api
 
 # GPT set up
@@ -104,11 +105,35 @@ async def handle_media_stream(websocket: WebSocket):
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
                         #print(f"Received event: {response['type']}", response)
-                        print("A")
+                        print("AAAAAAA")
 
                     ####### gets a transcription of what the user said, append that into an array for later context use
                     if response['type'] == "conversation.item.input_audio_transcription.completed":
-                        print(response['transcript']) # This is the transcript of what the user said
+                        to_load_context = await get_relevant_context(response['transcript'])
+                        
+                        if to_load_context != " ":
+                            
+                            #create the conversation item
+                            context_item = {
+                                "event_id" : "event_345",
+                                "type": "conversation.item.create",
+                                "item": {
+                                    "id": "msg_001",
+                                    "type": "message",
+                                    "role": "system",
+                                    "content": [
+                                        {
+                                            "type": "input_text",
+                                            "text": to_load_context
+                                        }
+                                    ]
+                                }
+                            }
+
+                            # Now put that into the websocket
+                            print(to_load_context)
+                            #await openai_ws.send(json.dumps(context_item))
+
 
                     ##########################################################################################
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
@@ -205,7 +230,10 @@ async def send_initial_conversation_item(openai_ws):
 
 async def initialize_session(openai_ws):
         
-    SYSTEM_MESSAGE = "You are a customer service AI, answer any questions. Be concise, do not go on tangents. You only speak in English"
+    SYSTEM_MESSAGE = "You are a customer service AI, answer any questions. Be concise, do not go on tangents. " \
+    "You only speak in English" \
+    "You only respond to questions based on context, do not use anything other than context for your answers." \
+    "If something is not available in the context given, say 'Sorry, I many not be able to help.'"
 
     """Control initial session with OpenAI."""
     session_update = {
@@ -221,7 +249,8 @@ async def initialize_session(openai_ws):
             "speed":1.2,
             "input_audio_transcription":{
                 "model":"whisper-1",
-            }
+            },
+            "max_response_output_tokens": "200",
         }
     }
     #print('Sending session update:', json.dumps(session_update))

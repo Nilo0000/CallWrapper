@@ -1,5 +1,5 @@
 
-import import_libary
+import import_libary as import_libary
 
 def writify_method(thing):
     with open("html_checker", "w") as f:
