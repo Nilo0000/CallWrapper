@@ -106,8 +106,9 @@ async def handle_media_stream(websocket: WebSocket):
                         #print(f"Received event: {response['type']}", response)
                         print("A")
 
+                    ####### gets a transcription of what the user said, append that into an array for later context use
                     if response['type'] == "conversation.item.input_audio_transcription.completed":
-                        print(response['transcript'])
+                        print(response['transcript']) # This is the transcript of what the user said
 
                     ##########################################################################################
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
