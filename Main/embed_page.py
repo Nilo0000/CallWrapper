@@ -2,7 +2,7 @@
 import os
 import openai
 # GPT set up
-openAI_API_Key = os.getenv("OPENAI_API")
+openAI_API_Key = os.getenv("openai_key")
 openAI_Client = openai.OpenAI(api_key=openAI_API_Key)
 
 def embed_content(content):

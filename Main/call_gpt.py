@@ -4,7 +4,7 @@ from extra_gpt_information import string_of
 from import_libary import *
 
 # GPT set up
-openAI_API_Key = os.getenv("OPENAI_API")
+openAI_API_Key = os.getenv("openai_key")
 openAI_Client = openai.OpenAI(api_key=openAI_API_Key)
 
 # Cosine similarity function

@@ -5,13 +5,12 @@ from call_gpt import get_relevant_context
 app = FastAPI() # initialize the fastapi api
 
 # GPT set up
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
+OPENAI_API_KEY = os.getenv("openai_key")
+host_port = int(os.getenv("hostPORT"))
 '''
     All of these async functions happen in parallel, with websocket requests so calls are streamlined
 '''
 # Websocket set up --> Also what functions the API can actually call 
-PORT = int(os.getenv('PORT', 5050))
 LOG_EVENT_TYPES = [  # The allowed functions for Realtime API Calling, VAD should be enabled
     'error', 'response.content.done', 'rate_limits.updated',
     'response.done', 'input_audio_buffer.committed',
@@ -206,7 +205,7 @@ async def send_initial_conversation_item(openai_ws):
 
 async def initialize_session(openai_ws):
         
-    SYSTEM_MESSAGE = "You are a customer service AI, answer any questions. Be concise, do not go on tangents. You only speak in English"
+    SYSTEM_MESSAGE = "You are a customer service AI for PineSmart AI, answer questions based on context. Be concise, do not go on tangents. You only speak in English. You only reply based on given context. If you do not have context, ask questions. Do NOT ever use external information."
 
     """Control initial session with OpenAI."""
     session_update = {
@@ -233,4 +232,4 @@ async def initialize_session(openai_ws):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    uvicorn.run(app, host="0.0.0.0", port=5050)
