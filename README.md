@@ -5,7 +5,6 @@
  - Context can be loaded using website scraping for now
 	 - Future additions may include, not limited to **XML, CSV, text files etc**
  - Front-end will be incorporated eventually
- - Uses OOP to sequentially load context for the LLM to read from, may find some better ways for clean up later
  - Uses embedding to find reasonable content to pull from into temporary_context for LLM to use
 
 A big focus for this is to **reduce costs**, using more computation power by the local machine to parse information, organize information and then mainly use OpenAI and Twilio for *1. AI capabilities, 2. Output 3.  Computation*. Plan is to reduce costs by nearly 50-80% (absolute maximum 50c per call).
@@ -13,8 +12,8 @@ A big focus for this is to **reduce costs**, using more computation power by the
 **APIs Used**
  - MongoDB Atlas database 
  - OpenAI Response
- - OpenAI Runtime API **Not implemented yet but planned**
- - Twilio Voice **Not implemented yet but planned**
+ - OpenAI Runtime API 
+ - Twilio Voice
 
 # Setup
 
@@ -59,10 +58,15 @@ Note: The dimensions value (1536) is specific to OpenAI's text-embedding-3-small
  - **writify. py**
 	 - Used to write to a file for test-purposes, not really required
 
-## Future Plans (as of 2025-05-12)
- - Add OpenAI's runtime API to chunk up voices, only input should be used and output will be simple TTS by perhaps twilio or something else
-	 - More information: https://platform.openai.com/docs/guides/realtime-vad
- - Incorporate calling and whatnot (2nd front-end sort of)
- - Create a website for uploading content, user ended
+# Features Added
+ - Calls are seamless
+ - Transcriptions provided for later context retrieval
 
- Planning on then using AWS to host service for fast computation, perhaps Lambda or something. 
+ - Future plans:
+   - Actual context retrieval
+   - Create front end, website
+   - Admin panel (for adding users and whatnot)
+   - Hook up to Virtual Machine for everything (not a very good way but whatever)
+
+**As of 2025-06-25**
+Huge break because of school, since the last update on 2025-05-12

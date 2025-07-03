@@ -7,9 +7,7 @@ from pymongo import MongoClient
 from pymongo import UpdateOne
 import os
 import openai
-from embed_page import embed_content
-from embed_page import textify_embed
-from writify import writify_method
+#from writify import writify_method
 
 
 ## Call imports

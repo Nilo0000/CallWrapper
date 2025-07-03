@@ -1,7 +1,7 @@
 
 # Imports
 from import_libary import *
-from call_gpt import conversation
+from call_gpt import get_relevant_context
 app = FastAPI() # initialize the fastapi api
 
 # GPT set up
@@ -103,8 +103,15 @@ async def handle_media_stream(websocket: WebSocket):
                 async for openai_message in openai_ws:
                     response = json.loads(openai_message)
                     if response['type'] in LOG_EVENT_TYPES:
-                        print(f"Received event: {response['type']}", response)
+                        #print(f"Received event: {response['type']}", response)
+                        print("A")
 
+                    if response['type'] == "conversation.item.input_audio_transcription.completed":
+                        print("B")
+                        to_load_context = get_relevant_context(response["transcript"])
+                        print(to_load_context)
+
+                    ##########################################################################################
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
                         audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
                         audio_delta = {
@@ -212,11 +219,15 @@ async def initialize_session(openai_ws):
             "instructions": SYSTEM_MESSAGE,
             "modalities": ["text", "audio"],
             "temperature": 0.8,
+            "speed":1.1,
+            "input_audio_transcription":{
+                "model":"whisper-1",
+            },
         }
     }
-    print('Sending session update:', json.dumps(session_update))
+    #print('Sending session update:', json.dumps(session_update))
     await openai_ws.send(json.dumps(session_update))
-
+    
     # Uncomment the next line to have the AI speak first
     await send_initial_conversation_item(openai_ws)
 

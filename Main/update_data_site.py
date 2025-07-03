@@ -1,6 +1,6 @@
 
 # Imports
-from import_libary import *
+from Main.helpers.import_libary import *
 
 def getContents(url):
     # Retrieve HTML information

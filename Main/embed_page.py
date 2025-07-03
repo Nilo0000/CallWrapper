@@ -1,5 +1,6 @@
 
-from import_libary import *
+import os
+import openai
 # GPT set up
 openAI_API_Key = os.getenv("OPENAI_API")
 openAI_Client = openai.OpenAI(api_key=openAI_API_Key)
