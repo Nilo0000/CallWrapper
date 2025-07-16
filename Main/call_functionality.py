@@ -116,8 +116,8 @@ async def handle_media_stream(websocket: WebSocket, username: str):
                         "role": "system",
                         "content": [
                             {
-                                "type": "text",
-                                "text": f"IMPORTANT: Use ONLY the following context to answer the user's question. Do not use any other knowledge. If the answer is not in this context, say you don't have that information.\n\nContext: {to_load_context}"
+                                "type": "input_text",
+                                "text": f"IMPORTANT: Use the following as context to respond to any questions or input: {to_load_context}"
                             }
                         ]
                     }
@@ -305,8 +305,8 @@ async def send_initial_conversation_item(openai_ws):
 
 async def initialize_session(openai_ws):
         
-    SYSTEM_MESSAGE = "You are a customer service AI, answer questions only based on context given, no other information. If the information is not in your context, tell them you don't know" \
-    "Never use anything from the internet. Only use information based on what is given to you. Be concise, do not go on tangents. You only speak in English. "
+    SYSTEM_MESSAGE = "You are a customer service AI, answer questions only based on context given, no other information." \
+    "Never use anything from the internet. Use information passed as 'IMPORTANT'. Be concise, do not go on tangents. You only speak in English. "
 
     """Control initial session with OpenAI."""
     session_update = {

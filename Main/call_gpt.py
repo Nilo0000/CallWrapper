@@ -73,7 +73,7 @@ def get_relevant_context(prompt, username):
             score = doc.get("score")
             
             # Now if they're relevant enough, get their content
-            if score > 0.7:
+            if score > 0.6:
                 content = pages_collection.find_one(
                     {"_id": doc.get("_id")}
                 )
