@@ -1,0 +1,11 @@
+beautifulsoup4==4.13.4
+fastapi==0.116.1
+numpy==2.3.1
+openai==1.96.1
+pymongo==3.11.4
+python-dotenv==1.1.1
+Requests==2.32.4
+twilio==9.6.0
+uvicorn==0.35.0
+websocket_client==1.8.0
+websockets==15.0.1
