@@ -19,6 +19,10 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
 from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 
+# Environment set up
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="Main/container.env")
+
 
 # Math
 import numpy as np
@@ -27,7 +31,7 @@ from numpy.linalg import norm
 
 
 # MongoDB setup
-database_login_credentials = os.getenv("mongoDB_login")
+database_login_credentials = os.getenv("mongo_login")
 connectClient = MongoClient(database_login_credentials)
 mainData = connectClient["main"]
 pages_collection = mainData["pages"]

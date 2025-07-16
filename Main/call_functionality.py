@@ -1,11 +1,11 @@
-
 # Imports
 from import_libary import *
 from call_gpt import get_relevant_context
+import time
 app = FastAPI() # initialize the fastapi api
 
 # GPT set up
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("openai_key")
 
 '''
     All of these async functions happen in parallel, with websocket requests so calls are streamlined
@@ -36,21 +36,27 @@ async def index_page():
 @app.api_route("/incoming-call", methods=["GET", "POST"])
 async def handle_incoming_call(request: Request):
     """Handle incoming call and return TwiML response to connect to Media Stream."""
+    
+    # Extract username from query parameters
+    username = request.query_params.get('username', 'Guest')  # Default to 'Guest' if not provided
+    print(f"Incoming call from username: {username}")
+
     response = VoiceResponse()
     # <Say> punctuation to improve text-to-speech flow
     response.say("Connected")
 
     host = request.url.hostname
     connect = Connect()
-    connect.stream(url=f'wss://{host}/media-stream')
+    connect.stream(url=f'wss://{host}/media-stream/{username}')
+
     response.append(connect)
     return HTMLResponse(content=str(response), media_type="application/xml")
 
 # MEDIA STREAM
-@app.websocket("/media-stream")
-async def handle_media_stream(websocket: WebSocket):
+@app.websocket("/media-stream/{username}")
+async def handle_media_stream(websocket: WebSocket, username: str):
     """Handle WebSocket connections between Twilio and OpenAI."""
-    print("Client connected")
+    print(f"Client connected - Username: {username}")
     await websocket.accept()
 
     async with websockets.connect(
@@ -68,6 +74,70 @@ async def handle_media_stream(websocket: WebSocket):
         last_assistant_item = None
         mark_queue = []
         response_start_timestamp_twilio = None
+        
+        # Transcript accumulation variables
+        transcript_buffer = ""
+        last_transcript_time = 0
+        transcript_timeout = 4.0  # seconds to wait before processing incomplete sentence
+        
+        def is_sentence_complete(text):
+            """Check if the text appears to be a complete sentence."""
+            text = text.strip()
+            if not text:
+                return False
+            
+            # Check for sentence ending punctuation
+            sentence_endings = ['.', '!', '?']
+            if any(text.endswith(ending) for ending in sentence_endings):
+                return True
+            
+            # Check for common pause indicators that might signal end of thought
+            pause_indicators = [', um,', ', uh,', ', so,', ', well,', ', okay,']
+            if any(indicator in text.lower() for indicator in pause_indicators):
+                return True
+            
+            return False
+        
+        async def process_complete_transcript(transcript):
+            """Process a complete transcript sentence."""
+            if transcript.strip():
+                print("COMPLETE TRANSCRIPTION: " + transcript)
+
+                ########### GETS THE CONTEXT ################# FINALLY
+                to_load_context = get_relevant_context(transcript, username)
+                print(to_load_context)
+
+                """Send retrieved context to OpenAI Realtime API to use as the ONLY context."""
+                # Create a system message with the context
+                context_message = {
+                    "type": "conversation.item.create",
+                    "item": {
+                        "type": "message",
+                        "role": "system",
+                        "content": [
+                            {
+                                "type": "input_text",
+                                "text": f"IMPORTANT: Use the following as context to respond to any questions or input: {to_load_context}"
+                            }
+                        ]
+                    }
+                }
+                
+                await openai_ws.send(json.dumps(context_message))
+                print("Context sent to OpenAI Realtime API")
+        
+        async def check_transcript_timeout():
+            """Check if transcript buffer should be processed due to timeout."""
+            nonlocal transcript_buffer, last_transcript_time
+            
+            while True:
+                await asyncio.sleep(0.5)  # Check every 500ms
+                
+                if transcript_buffer and time.time() - last_transcript_time > transcript_timeout:
+                    # Process the buffered transcript even if not complete
+                    await process_complete_transcript(transcript_buffer)
+                    transcript_buffer = ""
+                    last_transcript_time = 0
         
         async def receive_from_twilio():
             """Receive audio data from Twilio and send it to the OpenAI Realtime API."""
@@ -98,7 +168,7 @@ async def handle_media_stream(websocket: WebSocket):
 
         async def send_to_twilio():
             """Receive events from the OpenAI Realtime API, send audio back to Twilio."""
-            nonlocal stream_sid, last_assistant_item, response_start_timestamp_twilio
+            nonlocal stream_sid, last_assistant_item, response_start_timestamp_twilio, transcript_buffer, last_transcript_time
             try:
                 async for openai_message in openai_ws:
                     response = json.loads(openai_message)
@@ -108,8 +178,22 @@ async def handle_media_stream(websocket: WebSocket):
 
                     if response['type'] == "conversation.item.input_audio_transcription.completed":
                         print("B")
-                        to_load_context = get_relevant_context(response["transcript"])
-                        print(to_load_context)
+                        transcript_chunk = response["transcript"]
+                        print("TRANSCRIPT CHUNK: " + transcript_chunk)
+                        
+                        # Add chunk to buffer
+                        if transcript_buffer:
+                            transcript_buffer += " " + transcript_chunk
+                        else:
+                            transcript_buffer = transcript_chunk
+                        
+                        last_transcript_time = time.time()
+                        
+                        # Check if we have a complete sentence
+                        if is_sentence_complete(transcript_buffer):
+                            await process_complete_transcript(transcript_buffer)
+                            transcript_buffer = ""
+                            last_transcript_time = 0
 
                     ##########################################################################################
                     if response.get('type') == 'response.audio.delta' and 'delta' in response:
@@ -140,6 +224,15 @@ async def handle_media_stream(websocket: WebSocket):
                         if last_assistant_item:
                             print(f"Interrupting response with id: {last_assistant_item}")
                             await handle_speech_started_event()
+                    
+                    # Handle speech stopped - good time to process any remaining transcript
+                    if response.get('type') == 'input_audio_buffer.speech_stopped':
+                        print("Speech stopped detected.")
+                        if transcript_buffer:
+                            await process_complete_transcript(transcript_buffer)
+                            transcript_buffer = ""
+                            last_transcript_time = 0
+                            
             except Exception as e:
                 print(f"Error in send_to_twilio: {e}")
 
@@ -183,7 +276,13 @@ async def handle_media_stream(websocket: WebSocket):
                 await connection.send_json(mark_event)
                 mark_queue.append('responsePart')
 
-        await asyncio.gather(receive_from_twilio(), send_to_twilio())
+        # Start the timeout checker task
+        timeout_task = asyncio.create_task(check_transcript_timeout())
+        
+        try:
+            await asyncio.gather(receive_from_twilio(), send_to_twilio())
+        finally:
+            timeout_task.cancel()
 
 async def send_initial_conversation_item(openai_ws):
     """Send initial conversation item if AI talks first."""
@@ -206,13 +305,17 @@ async def send_initial_conversation_item(openai_ws):
 
 async def initialize_session(openai_ws):
         
-    SYSTEM_MESSAGE = "You are a customer service AI, answer any questions. Be concise, do not go on tangents. You only speak in English"
+    SYSTEM_MESSAGE = "You are a customer service AI, answer questions only based on context given, no other information." \
+    "Never use anything from the internet. Use information passed as 'IMPORTANT'. Be concise, do not go on tangents. You only speak in English. "
 
     """Control initial session with OpenAI."""
     session_update = {
         "type": "session.update",
         "session": {
-            "turn_detection": {"type": "server_vad"},
+            "turn_detection": {
+                "type": "server_vad",
+                "threshold": 0.4
+                },
             "input_audio_format": "g711_ulaw",
             "output_audio_format": "g711_ulaw",
             "voice": VOICE,
