@@ -106,6 +106,25 @@ async def handle_media_stream(websocket: WebSocket, username: str):
                 ########### GETS THE CONTEXT ################# FINALLY
                 to_load_context = get_relevant_context(transcript, username)
                 print(to_load_context)
+
+                """Send retrieved context to OpenAI Realtime API to use as the ONLY context."""
+                # Create a system message with the context
+                context_message = {
+                    "type": "conversation.item.create",
+                    "item": {
+                        "type": "message",
+                        "role": "system",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"IMPORTANT: Use ONLY the following context to answer the user's question. Do not use any other knowledge. If the answer is not in this context, say you don't have that information.\n\nContext: {to_load_context}"
+                            }
+                        ]
+                    }
+                }
+                
+                await openai_ws.send(json.dumps(context_message))
+                print("Context sent to OpenAI Realtime API")
         
         async def check_transcript_timeout():
             """Check if transcript buffer should be processed due to timeout."""
