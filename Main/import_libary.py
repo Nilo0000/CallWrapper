@@ -21,7 +21,7 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
 
 # Environment set up
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="CallWrapper/Main/container.env")
+load_dotenv(dotenv_path="Main/container.env")
 
 
 # Math
